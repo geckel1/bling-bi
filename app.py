@@ -217,16 +217,16 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
                 for item in itens:
                     sku = item.get('codigo', 'S/ SKU')
                     
-                    # CORREÇÃO: Pegamos o nome do PAIS pelo SKU no cache.
-                    # Se não achar no cache (produto novo), aí sim usamos o nome original.
-                    modelo_pai = cache_skus.get(sku, item.get('descricao') or item.get('nome'))
+                    # BUSCA NO CACHE
+                    # Se o SKU estiver no cache, ele trará o nome do PAI cadastrado no Passo 2
+                    modelo_pai = cache_skus.get(sku, "Produto sem nome no cache")
                     
                     try:
                         qtde, preco = float(item.get('quantidade', 0)), float(item.get('valor', 0))
                     except:
                         qtde, preco = 0.0, 0.0
                         
-                    # Aqui usamos 'modelo_pai' em vez do nome da variação
+                    # Aqui usamos 'modelo_pai'
                     itens_proc.append({
                         "sku": sku, 
                         "modelo_pai": modelo_pai, 

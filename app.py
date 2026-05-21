@@ -91,7 +91,9 @@ if token_atual:
     st.sidebar.success("✅ Conectado com Sucesso à API!")
 else:
     st.sidebar.warning("⚠️ Autenticação Requerida")
-    url_auth = f"https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id={CLIENT_ID}&state=python123&redirect_uri={REDIRECT_URI}&scope=pedidos.read produtos.read"
+    # O uso de '+' separa os escopos corretamente sem quebrar a URL
+    escopos = "pedidos.read+produtos.read"
+    url_auth = f"https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id={CLIENT_ID}&state=python123&redirect_uri={REDIRECT_URI}&scope={escopos}"
     st.sidebar.markdown(f"[👉 Clique aqui para Autorizar no Bling]({url_auth})")
     
     url_retorno = st.sidebar.text_input("Cole aqui a URL final de redirecionamento (do Google):")

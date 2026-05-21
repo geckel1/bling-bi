@@ -181,7 +181,10 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
                 id_pai = str(p.get('variacao', {}).get('produtoPai', {}).get('id'))
                 variacoes.append({'sku': sku, 'id_pai': id_pai, 'nome': nome})
             else:
-                if sku: cache_skus[sku] = nome
+                # REGRA DE OURO: Se o nome tem "tamanho:" ou "ziper:", 
+                # tente encontrar o nome base (o que vem antes da sujeira)
+                nome_limpo = nome.split(' tamanho')[0].split(' - ')[0].split(';')[0]
+                if sku: cache_skus[sku] = nome_limpo
         time.sleep(0.35)
         pagina += 1
         status_log.info(f"Analisando página {pagina} de produtos...")
@@ -229,6 +232,9 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
                 itens_proc = []
                 for item in itens:
                     sku = item.get('codigo', 'S/ SKU')
+
+                    if "tamanho" in item.get('descricao', '').lower():
+                        print(f"DEBUG: SKU {sku} | Nome da API: {item.get('descricao')} | Pai no Cache: {cache_skus.get(sku)}")
                     
                     # BUSCA NO CACHE
                     # Se o SKU estiver no cache, ele trará o nome do PAI cadastrado no Passo 2

@@ -15,6 +15,7 @@ from supabase import create_client, Client
 load_dotenv()
 CLIENT_ID = os.getenv("BLING_CLIENT_ID")
 CLIENT_SECRET = os.getenv("BLING_CLIENT_SECRET")
+REDIRECT_URI = os.getenv("STREAMLIT_REDIRECT_URI")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 

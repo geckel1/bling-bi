@@ -177,13 +177,17 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
             nome = p.get('nome', '')
             formato = p.get('formato', 'S')
             nomes_por_id[p_id] = nome
-            nome_limpo = nome.split(' tamanho')[0].split(' - ')[0].split(';')[0]
-            if sku: cache_skus[sku] = nome_limpo
+
 
             # Se for variação, sobrescreve com o nome do PAI se encontrar
             if formato == 'V':
-                id_pai = str(p.get('variacao', {}).get('produtoPai', {}).get('id'))
-                variacoes.append({'sku': sku, 'id_pai': id_pai, 'nome': nome})
+                pai = p.get('variacao', {}).get('produtoPai', {})
+                nome_pai = pai.get('nome', nome) # Se não achar o pai, usa o nome do filho
+                if sku: cache_skus[sku] = nome_pai
+            else:
+                # É produto simples, o nome dele é o nome base
+                nome_limpo = nome.split(' tamanho')[0].split(' - ')[0].split(';')[0]
+                if sku: cache_skus[sku] = nome_limpo
         time.sleep(0.35)
         pagina += 1
         status_log.info(f"Analisando página {pagina} de produtos...")

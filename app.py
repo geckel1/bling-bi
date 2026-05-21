@@ -233,12 +233,19 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
                 for item in itens:
                     sku = item.get('codigo', 'S/ SKU')
 
+                    nome_item = item.get('descricao')
+
+                    nome_limpo = nome_item.split(' tamanho')[0].split(' - ')[0].split(';')[0]
+
+                    # DEBUG VISÍVEL NO SIDEBAR (Vai aparecer na tela enquanto processa)
+                    st.sidebar.write(f"SKU: {sku} | Cache: {cache_skus.get(sku)}")
+
                     if "tamanho" in item.get('descricao', '').lower():
                         print(f"DEBUG: SKU {sku} | Nome da API: {item.get('descricao')} | Pai no Cache: {cache_skus.get(sku)}")
                     
                     # BUSCA NO CACHE
                     # Se o SKU estiver no cache, ele trará o nome do PAI cadastrado no Passo 2
-                    modelo_pai = cache_skus.get(sku, "Produto sem nome no cache")
+                    modelo_pai = cache_skus.get(sku, nome_limpo)
                     
                     try:
                         qtde, preco = float(item.get('quantidade', 0)), float(item.get('valor', 0))

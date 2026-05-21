@@ -206,8 +206,11 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
         
     pagina = 1
     status_log.info("🔄 Sincronizando histórico de vendas...")
-    barra_progresso.progress(20) # Começamos a fase de pedidos
+    response_init = requests.get(f"{url_base_ped}?limite=1", headers=headers)
+    total_registros = response_init.json().get('metadata', {}).get('totalRegistros', 100)
     while True:
+        progresso_atual = (pagina * 100) / (total_registros / 100)
+        barra_progresso.progress(int(progresso_atual))
         url = f"{url_base_ped}?pagina={pagina}&limite=100{filtro_ped}"
         res = requests.get(url, headers=headers)
         if res.status_code != 200: break

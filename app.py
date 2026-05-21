@@ -177,14 +177,13 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
             nome = p.get('nome', '')
             formato = p.get('formato', 'S')
             nomes_por_id[p_id] = nome
+            nome_limpo = nome.split(' tamanho')[0].split(' - ')[0].split(';')[0]
+            if sku: cache_skus[sku] = nome_limpo
+
+            # Se for variação, sobrescreve com o nome do PAI se encontrar
             if formato == 'V':
                 id_pai = str(p.get('variacao', {}).get('produtoPai', {}).get('id'))
                 variacoes.append({'sku': sku, 'id_pai': id_pai, 'nome': nome})
-            else:
-                # REGRA DE OURO: Se o nome tem "tamanho:" ou "ziper:", 
-                # tente encontrar o nome base (o que vem antes da sujeira)
-                nome_limpo = nome.split(' tamanho')[0].split(' - ')[0].split(';')[0]
-                if sku: cache_skus[sku] = nome_limpo
         time.sleep(0.35)
         pagina += 1
         status_log.info(f"Analisando página {pagina} de produtos...")
@@ -245,7 +244,11 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
                     
                     # BUSCA NO CACHE
                     # Se o SKU estiver no cache, ele trará o nome do PAI cadastrado no Passo 2
-                    modelo_pai = cache_skus.get(sku, nome_limpo)
+                    if sku in cache_skus:
+                        modelo_pai = cache_skus[sku]
+                    else:
+                        # Se entrar aqui, sabemos que o cache falhou para este SKU
+                        modelo_pai = f"SEM_CACHE: {item.get('descricao')}"
                     
                     try:
                         qtde, preco = float(item.get('quantidade', 0)), float(item.get('valor', 0))

@@ -101,6 +101,16 @@ st.title("📊 Painel Executivo - Análise de Curva ABC por Modelo")
 st.sidebar.header("🔑 Conexão Bling API v3")
 token_atual = obter_token_valido()
 
+# --- LOGICA DE LOGIN AUTOMATICO ---
+query_params = st.query_params
+if "code" in query_params and not token_atual:
+    codigo = query_params["code"]
+    # ... aqui entra a lógica de POST para o Bling ...
+    # Se der certo:
+    st.success("Autenticado com sucesso!")
+    st.query_params.clear() # Limpa a URL
+    st.rerun()
+
 if token_atual:
     st.sidebar.success("✅ Conectado com Sucesso à API!")
 else:

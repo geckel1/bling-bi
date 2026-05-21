@@ -20,10 +20,6 @@ REDIRECT_URI = os.getenv("STREAMLIT_REDIRECT_URI")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-key = os.getenv("SECRET_KEY_CRYPTO").encode() # Converte a string para bytes
-cipher_suite = Fernet(key)
-
-
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     st.error("Erro: Credenciais do Supabase não encontradas no arquivo .env")
@@ -31,25 +27,20 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# --- FUNÇÕES DE PERSISTÊNCIA ---
-def get_state(key_name):
-    res = supabase.table('bling_state').select('data').eq('key', key_name).execute()
-    return res.data[0]['data'] if res.data else None
-
-def save_state(key_name, data_dict):
-    supabase.table('bling_state').upsert({'key': key_name, 'data': data_dict}).execute()
-
-# ==========================================
-# FUNÇÕES DE PERSISTÊNCIA NA NUVEM (SUPABASE)
-# ==========================================
+# --- FUNÇÕES DE PERSISTÊNCIA NA NUVEM (SUPABASE) ---
 def get_state(key_name):
     try:
         res = supabase.table('bling_state').select('data').eq('key', key_name).execute()
-        if res.data:
+        if res.data and len(res.data) > 0:
             return res.data[0]['data']
     except Exception as e:
         st.sidebar.error(f"Erro ao ler banco de dados: {e}")
     return None
+
+# --- FUNÇÕES DE CRIPTOGRAFIA ---
+from cryptography.fernet import Fernet
+KEY = os.getenv("SECRET_KEY_CRYPTO").encode()
+cipher_suite = Fernet(KEY)
 
 def save_state(key_name, data_dict):
     try:
@@ -75,14 +66,28 @@ def renovar_token_automaticamente(refresh_token):
 
 def obter_token_valido():
     tokens_salvos_criptografados = get_state('tokens')
-    tokens_salvos = cipher_suite.decrypt(tokens_salvos_criptografados)
-    if tokens_salvos:
-        headers_teste = {"Authorization": f"Bearer {tokens_salvos['access_token']}"}
-        teste_resp = requests.get("https://www.bling.com.br/Api/v3/pedidos/vendas?limite=1", headers=headers_teste)
-        if teste_resp.status_code == 200:
-            return tokens_salvos['access_token']
-        elif teste_resp.status_code == 401:
-            return renovar_token_automaticamente(tokens_salvos['refresh_token'])
+    
+    # Verifica se encontrou algo no banco
+    if tokens_salvos_criptografados:
+        try:
+            # Garante que o dado lido seja convertido para bytes antes de descriptografar
+            if isinstance(tokens_salvos_criptografados, str):
+                tokens_salvos_criptografados = tokens_salvos_criptografados.encode()
+            
+            dados_decifrados = cipher_suite.decrypt(tokens_salvos_criptografados)
+            tokens_salvos = json.loads(dados_decifrados.decode())
+            
+            # Validação do token...
+            headers_teste = {"Authorization": f"Bearer {tokens_salvos['access_token']}"}
+            teste_resp = requests.get("https://www.bling.com.br/Api/v3/pedidos/vendas?limite=1", headers=headers_teste)
+            
+            if teste_resp.status_code == 200:
+                return tokens_salvos['access_token']
+            elif teste_resp.status_code == 401:
+                return renovar_token_automaticamente(tokens_salvos['refresh_token'])
+        except Exception as e:
+            st.sidebar.error(f"Erro ao decifrar token: {e}")
+            return None
     return None
 
 # Interface Gráfica (Streamlit)
@@ -112,7 +117,8 @@ else:
             
             resp = requests.post("https://www.bling.com.br/Api/v3/oauth/token", headers=headers, data=payload)
             if resp.status_code == 200:
-                save_state('tokens', resp.json())
+                dados_criptografados = cipher_suite.encrypt(resp.json())
+                save_state('tokens', dados_criptografados)
                 st.sidebar.success("🎉 Autenticado! Atualize a página.")
                 st.rerun()
             else:

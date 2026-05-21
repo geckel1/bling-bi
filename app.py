@@ -301,22 +301,17 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
     for id_ped, info in pedidos_salvos.items():
         sit = info['situacao']
         for item in info['itens']:
-            # AQUI ESTÁ A MÁGICA: 
-            # Sempre usamos o 'modelo_pai' que já foi definido lá no Passo 2
-            nome_agrupado = item['modelo_pai'] 
-            debug_status = "ACHOU_NO_CACHE" if item['sku'] in cache_skus else "USOU_NOME_ORIGINAL"
-
-            writer_base.writerow([
-                info['data'], id_ped, item['sku'], nome_agrupado, 
-                item['variacao'], item['qtde'], item['preco'], 
-                item['total'], sit
-            ])
+            # 1. Normalização: Limpa o nome para o formato "Modelo Base"
+            nome_bruto = item.get('modelo_pai', item.get('descricao', ''))
+            nome_normalizado = nome_bruto.split(' tamanho')[0].split(' - ')[0].split(';')[0].strip()
             
-            pedidos_csv.append([info['data'], id_ped, item['sku'], nome_agrupado, debug_status, item['variacao'], item['qtde'], item['preco'], item['total'], sit])
-            
+            # 2. Agora usamos o nome_normalizado para tudo!
             if str(sit).lower() != "cancelado" and str(sit) != "12":
-                faturamento_por_modelo[nome_agrupado] = faturamento_por_modelo.get(nome_agrupado, 0.0) + item['total']
-                quantidade_por_modelo[nome_agrupado] = quantidade_por_modelo.get(nome_agrupado, 0.0) + item['qtde']
+                faturamento_por_modelo[nome_normalizado] = faturamento_por_modelo.get(nome_normalizado, 0.0) + item['total']
+                quantidade_por_modelo[nome_normalizado] = quantidade_por_modelo.get(nome_normalizado, 0.0) + item['qtde']
+                
+            # Escrita no CSV base (com o nome normalizado)
+            writer_base.writerow([info['data'], id_ped, item['sku'], nome_normalizado, item['variacao'], item['qtde'], item['preco'], item['total'], sit])
                 
     total_geral = sum(faturamento_por_modelo.values())
     

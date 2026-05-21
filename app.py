@@ -104,7 +104,23 @@ token_atual = obter_token_valido()
 # --- LOGICA DE LOGIN AUTOMATICO ---
 query_params = st.query_params
 if "code" in query_params and not token_atual:
-    codigo = query_params["code"]
+    try:
+        codigo = query_params["code"]
+        auth_base64 = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode('utf-8')).decode('utf-8')
+        headers = {"Authorization": f"Basic {auth_base64}", "Content-Type": "application/x-www-form-urlencoded"}
+        payload = {"grant_type": "authorization_code", "code": codigo}
+        
+        resp = requests.post("https://www.bling.com.br/Api/v3/oauth/token", headers=headers, data=payload)
+        if resp.status_code == 200:
+            # Criptografa, converte para bytes e depois para string base64
+            dados_criptografados = cipher_suite.encrypt(json.dumps(resp.json()).encode())
+            save_state('tokens', dados_criptografados)
+            st.sidebar.success("🎉 Autenticado! Atualize a página.")
+            st.rerun()
+        else:
+            st.sidebar.error("Erro ao validar código no Bling.")
+    except Exception:
+        st.sidebar.error("URL inválida.")
     # ... aqui entra a lógica de POST para o Bling ...
     # Se der certo:
     st.success("Autenticado com sucesso!")
@@ -119,26 +135,6 @@ else:
     escopos = "pedidos.read+produtos.read"
     url_auth = f"https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code&client_id={CLIENT_ID}&state=python123&redirect_uri={REDIRECT_URI}&scope={escopos}"
     st.sidebar.markdown(f"[👉 Clique aqui para Autorizar no Bling]({url_auth})")
-    
-    url_retorno = st.sidebar.text_input("Cole aqui a URL final de redirecionamento (do Google):")
-    if url_retorno:
-        try:
-            codigo = parse_qs(urlparse(url_retorno).query)['code'][0]
-            auth_base64 = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode('utf-8')).decode('utf-8')
-            headers = {"Authorization": f"Basic {auth_base64}", "Content-Type": "application/x-www-form-urlencoded"}
-            payload = {"grant_type": "authorization_code", "code": codigo}
-            
-            resp = requests.post("https://www.bling.com.br/Api/v3/oauth/token", headers=headers, data=payload)
-            if resp.status_code == 200:
-                # Criptografa, converte para bytes e depois para string base64
-                dados_criptografados = cipher_suite.encrypt(json.dumps(resp.json()).encode())
-                save_state('tokens', dados_criptografados)
-                st.sidebar.success("🎉 Autenticado! Atualize a página.")
-                st.rerun()
-            else:
-                st.sidebar.error("Erro ao validar código no Bling.")
-        except Exception:
-            st.sidebar.error("URL inválida.")
 
 # Corpo Principal
 dias_analise = st.slider("Período de Análise (Dias de histórico de vendas):", min_value=30, max_value=365, value=90)

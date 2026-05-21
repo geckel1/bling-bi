@@ -284,6 +284,8 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
     
     # Lista para salvar o CSV com os nomes dos PAIS
     pedidos_csv = [] 
+
+    st.write(f"DEBUG: Pedidos carregados na memória: {len(pedidos_salvos)}")
     
     for id_ped, info in pedidos_salvos.items():
         sit = info['situacao']
@@ -292,6 +294,12 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
             # Sempre usamos o 'modelo_pai' que já foi definido lá no Passo 2
             nome_agrupado = item['modelo_pai'] 
             debug_status = "ACHOU_NO_CACHE" if item['sku'] in cache_skus else "USOU_NOME_ORIGINAL"
+
+            writer_base.writerow([
+                info['data'], id_ped, item['sku'], nome_agrupado, 
+                item['variacao'], item['qtde'], item['preco'], 
+                item['total'], sit
+            ])
             
             pedidos_csv.append([info['data'], id_ped, item['sku'], nome_agrupado, debug_status, item['variacao'], item['qtde'], item['preco'], item['total'], sit])
             
@@ -328,6 +336,8 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
         time.sleep(1) # Deixa a mensagem brilhar por um segundo
         barra_progresso.empty() # Remove a barra da tela
         
+        output_base.seek(0)
+        output_abc.seek(0)
         # 2. RENDERIZAÇÃO DOS BOTÕES (Dentro do IF, aqui eles existem!)
         col1, col2 = st.columns(2)
         with col1:

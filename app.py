@@ -288,8 +288,9 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
             # AQUI ESTÁ A MÁGICA: 
             # Sempre usamos o 'modelo_pai' que já foi definido lá no Passo 2
             nome_agrupado = item['modelo_pai'] 
+            debug_status = "ACHOU_NO_CACHE" if item['sku'] in cache_skus else "USOU_NOME_ORIGINAL"
             
-            pedidos_csv.append([info['data'], id_ped, item['sku'], nome_agrupado, item['variacao'], item['qtde'], item['preco'], item['total'], sit])
+            pedidos_csv.append([info['data'], id_ped, item['sku'], nome_agrupado, debug_status, item['variacao'], item['qtde'], item['preco'], item['total'], sit])
             
             if str(sit).lower() != "cancelado" and str(sit) != "12":
                 faturamento_por_modelo[nome_agrupado] = faturamento_por_modelo.get(nome_agrupado, 0.0) + item['total']

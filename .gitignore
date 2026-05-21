@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+tokens.json
+cache_modelos.json
+cache_pedidos.json
+*.csv

@@ -228,23 +228,27 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
         
     save_state('cache_pedidos', {"ultima_sincronizacao": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "pedidos": pedidos_salvos})
     
-    # 3. Processamento de Relatórios em Memória (Sem dependência de Disco)
+    # 3. Processamento de Relatórios (Agrupamento Corrigido)
     status_log.info("⚙️ Calculando matriz matemática da Curva ABC...")
-    
-    output_base = io.StringIO()
-    writer_base = csv.writer(output_base, delimiter=';')
-    writer_base.writerow(["Data", "ID Pedido", "SKU", "Modelo (Produto Pai)", "Variação Vendida", "Quantidade", "Preço Unitário", "Total Item", "Situação Pedido"])
     
     faturamento_por_modelo = {}
     quantidade_por_modelo = {}
     
+    # Lista para salvar o CSV com os nomes dos PAIS
+    pedidos_csv = [] 
+    
     for id_ped, info in pedidos_salvos.items():
         sit = info['situacao']
         for item in info['itens']:
-            writer_base.writerow([info['data'], id_ped, item['sku'], item['modelo_pai'], item['variacao'], item['qtde'], item['preco'], item['total'], sit])
+            # AQUI ESTÁ A MÁGICA: 
+            # Sempre usamos o 'modelo_pai' que já foi definido lá no Passo 2
+            nome_agrupado = item['modelo_pai'] 
+            
+            pedidos_csv.append([info['data'], id_ped, item['sku'], nome_agrupado, item['variacao'], item['qtde'], item['preco'], item['total'], sit])
+            
             if str(sit).lower() != "cancelado" and str(sit) != "12":
-                faturamento_por_modelo[item['modelo_pai']] = faturamento_por_modelo.get(item['modelo_pai'], 0.0) + item['total']
-                quantidade_por_modelo[item['modelo_pai']] = quantidade_por_modelo.get(item['modelo_pai'], 0.0) + item['qtde']
+                faturamento_por_modelo[nome_agrupado] = faturamento_por_modelo.get(nome_agrupado, 0.0) + item['total']
+                quantidade_por_modelo[nome_agrupado] = quantidade_por_modelo.get(nome_agrupado, 0.0) + item['qtde']
                 
     total_geral = sum(faturamento_por_modelo.values())
     

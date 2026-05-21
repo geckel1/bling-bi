@@ -1,0 +1,23 @@
+# Bling BI - Analisador de Curva ABC
+
+Este é um painel executivo desenvolvido para automatizar a análise de Curva ABC de produtos e modelos baseada em dados reais de vendas do Bling ERP.
+
+## O que este projeto faz:
+* **Sincronização Incremental:** Importa apenas o que mudou (pedidos e produtos) para garantir velocidade.
+* **Mapeamento de Modelos:** Consolida variações de produtos (SKUs filhos) em seus respectivos produtos pai, oferecendo uma visão real do giro por modelo.
+* **Cálculo de Curva ABC:** Classifica automaticamente seu catálogo em classes A, B e C com base no faturamento.
+* **Exportação:** Gera relatórios detalhados em formato CSV prontos para importação no Excel ou Power BI.
+
+## Como usar:
+1. Acesse a interface web.
+2. Autorize a conexão com sua conta Bling via OAuth.
+3. Defina o período de análise (dias).
+4. Clique em "Executar" e baixe os relatórios gerados.
+
+## Tecnologias:
+* **Interface:** Streamlit
+* **Persistência:** Supabase (PostgreSQL)
+* **Integração:** Bling API v3
+
+---
+*Nota: Este projeto é uma ferramenta de automação pessoal e não armazena credenciais de forma insegura. Todas as chaves são geridas via variáveis de ambiente criptografadas.*

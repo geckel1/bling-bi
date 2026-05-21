@@ -10,6 +10,7 @@ import io
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from cryptography.fernet import Fernet
 
 # Inicialização e Configurações
 load_dotenv()
@@ -18,6 +19,9 @@ CLIENT_SECRET = os.getenv("BLING_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("STREAMLIT_REDIRECT_URI")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+key = os.getenv("SECRET_KEY_CRYPTO").encode() # Converte a string para bytes
+cipher_suite = Fernet(key)
 
 
 
@@ -64,12 +68,14 @@ def renovar_token_automaticamente(refresh_token):
     response = requests.post("https://www.bling.com.br/Api/v3/oauth/token", headers=headers, data=payload)
     if response.status_code == 200:
         dados = response.json()
-        save_state('tokens', dados)
+        dados_criptografados = cipher_suite.encrypt(dados)
+        save_state('tokens', dados_criptografados)
         return dados['access_token']
     return None
 
 def obter_token_valido():
-    tokens_salvos = get_state('tokens')
+    tokens_salvos_criptografados = get_state('tokens')
+    tokens_salvos = cipher_suite.decrypt(tokens_salvos_criptografados)
     if tokens_salvos:
         headers_teste = {"Authorization": f"Bearer {tokens_salvos['access_token']}"}
         teste_resp = requests.get("https://www.bling.com.br/Api/v3/pedidos/vendas?limite=1", headers=headers_teste)

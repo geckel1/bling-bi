@@ -158,6 +158,11 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
     
     pagina = 1
     variacoes = []
+
+    status_log = st.empty()
+    barra_progresso = st.progress(0)
+    
+    status_log.info("🔄 Iniciando sincronização de produtos...")
     
     while True:
         url = f"{url_base_prod}?pagina={pagina}&limite=100{filtro_prod}"
@@ -179,6 +184,8 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
                 if sku: cache_skus[sku] = nome
         time.sleep(0.35)
         pagina += 1
+        status_log.info(f"Analisando página {pagina} de produtos...")
+        barra_progresso.progress(min(pagina * 5, 100)) # Ajuste o multiplicador conforme seu volume
         
     for v in variacoes:
         if v['sku']: cache_skus[v['sku']] = nomes_por_id.get(v['id_pai'], v['nome'])
@@ -198,6 +205,8 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
         filtro_ped = f"&dataInicial={(datetime.datetime.now() - datetime.timedelta(days=dias_analise)).strftime('%Y-%m-%d')}"
         
     pagina = 1
+    status_log.info("🔄 Sincronizando histórico de vendas...")
+    barra_progresso.progress(20) # Começamos a fase de pedidos
     while True:
         url = f"{url_base_ped}?pagina={pagina}&limite=100{filtro_ped}"
         res = requests.get(url, headers=headers)
@@ -207,6 +216,7 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
         
         for p in pedidos_api:
             id_pedido = str(p.get('id'))
+            status_log.info(f"Processando Pedido ID: {id_pedido}...")
             situacao = str(p.get('situacao', {}).get('valor', 'N/A'))
             data_pedido = p.get('data', 'N/A')
             
@@ -243,6 +253,7 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
     
     ## 3. Processamento de Relatórios (Definição segura)
     status_log.info("⚙️ Calculando matriz matemática da Curva ABC...")
+    barra_progresso.progress(80)
     
     # DEFINA OS OBJETOS AQUI, FORA DO IF
     output_base = io.StringIO()
@@ -292,6 +303,10 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
             
         status_log.empty()
         st.success("🎉 Processamento Concluído com Sucesso!")
+        barra_progresso.progress(100)
+        status_log.success("✅ Processamento Concluído!")
+        time.sleep(1) # Deixa a mensagem brilhar por um segundo
+        barra_progresso.empty() # Remove a barra da tela
         
         # 2. RENDERIZAÇÃO DOS BOTÕES (Dentro do IF, aqui eles existem!)
         col1, col2 = st.columns(2)

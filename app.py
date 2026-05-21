@@ -42,11 +42,17 @@ from cryptography.fernet import Fernet
 KEY = os.getenv("SECRET_KEY_CRYPTO").encode()
 cipher_suite = Fernet(KEY)
 
-def save_state(key_name, data_dict):
+def save_state(key_name, data_dict_or_bytes):
     try:
-        supabase.table('bling_state').upsert({'key': key_name, 'data': data_dict}).execute()
+        # Se for bytes (criptografado), converte para string base64 para o Supabase aceitar
+        if isinstance(data_dict_or_bytes, bytes):
+            data_to_save = base64.b64encode(data_dict_or_bytes).decode('utf-8')
+        else:
+            data_to_save = data_dict_or_bytes
+            
+        supabase.table('bling_state').upsert({'key': key_name, 'data': data_to_save}).execute()
     except Exception as e:
-        st.sidebar.error(f"Erro ao gravar no banco de dados: {e}")
+        st.sidebar.error(f"Erro ao gravar no banco: {e}")
 
 # ==========================================
 # GERENCIAMENTO DE TOKENS (BLING v3)
@@ -65,30 +71,27 @@ def renovar_token_automaticamente(refresh_token):
     return None
 
 def obter_token_valido():
-    tokens_salvos_criptografados = get_state('tokens')
+    res = get_state('tokens')
+    if not res: return None
     
-    # Verifica se encontrou algo no banco
-    if tokens_salvos_criptografados:
-        try:
-            # Garante que o dado lido seja convertido para bytes antes de descriptografar
-            if isinstance(tokens_salvos_criptografados, str):
-                tokens_salvos_criptografados = tokens_salvos_criptografados.encode()
+    try:
+        # Se o que veio do banco for uma string, converte de volta para bytes
+        if isinstance(res, str):
+            encrypted_data = base64.b64decode(res.encode('utf-8'))
+        else:
+            return None # Dados em formato inesperado
             
-            dados_decifrados = cipher_suite.decrypt(tokens_salvos_criptografados)
-            tokens_salvos = json.loads(dados_decifrados.decode())
-            
-            # Validação do token...
-            headers_teste = {"Authorization": f"Bearer {tokens_salvos['access_token']}"}
-            teste_resp = requests.get("https://www.bling.com.br/Api/v3/pedidos/vendas?limite=1", headers=headers_teste)
-            
-            if teste_resp.status_code == 200:
-                return tokens_salvos['access_token']
-            elif teste_resp.status_code == 401:
-                return renovar_token_automaticamente(tokens_salvos['refresh_token'])
-        except Exception as e:
-            st.sidebar.error(f"Erro ao decifrar token: {e}")
-            return None
-    return None
+        dados_decifrados = cipher_suite.decrypt(encrypted_data)
+        tokens_salvos = json.loads(dados_decifrados.decode())
+        
+        # Teste de validade...
+        headers = {"Authorization": f"Bearer {tokens_salvos['access_token']}"}
+        if requests.get("https://www.bling.com.br/Api/v3/pedidos/vendas?limite=1", headers=headers).status_code == 200:
+            return tokens_salvos['access_token']
+        else:
+            return renovar_token_automaticamente(tokens_salvos['refresh_token'])
+    except Exception as e:
+        return None
 
 # Interface Gráfica (Streamlit)
 st.set_page_config(page_title="Bling BI - Curva ABC", page_icon="📊", layout="wide")
@@ -117,7 +120,8 @@ else:
             
             resp = requests.post("https://www.bling.com.br/Api/v3/oauth/token", headers=headers, data=payload)
             if resp.status_code == 200:
-                dados_criptografados = cipher_suite.encrypt(resp.json())
+                # Criptografa, converte para bytes e depois para string base64
+                dados_criptografados = cipher_suite.encrypt(json.dumps(resp.json()).encode())
                 save_state('tokens', dados_criptografados)
                 st.sidebar.success("🎉 Autenticado! Atualize a página.")
                 st.rerun()

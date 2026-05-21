@@ -215,8 +215,15 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
     response_init = requests.get(f"{url_base_ped}?limite=1", headers=headers)
     total_registros = response_init.json().get('metadata', {}).get('totalRegistros', 100)
     while True:
-        progresso_atual = (pagina * 100) / (total_registros / 100)
-        barra_progresso.progress(int(progresso_atual))
+        # Cálculo seguro do progresso
+        if total_registros > 0:
+            progresso_calc = (pagina * 100) / (total_registros / 100)
+            # Garante que o valor esteja sempre entre 0 e 100
+            progresso_seguro = max(0, min(int(progresso_calc), 100))
+            barra_progresso.progress(progresso_seguro)
+        else:
+            # Se não soubermos o total, usamos um progresso indeterminado ou fixo
+            barra_progresso.progress(50)
         url = f"{url_base_ped}?pagina={pagina}&limite=100{filtro_ped}"
         res = requests.get(url, headers=headers)
         if res.status_code != 200: break

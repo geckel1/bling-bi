@@ -266,6 +266,7 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
     total_geral = sum(faturamento_por_modelo.values())
     
     if total_geral > 0:
+        # 1. PREPARAÇÃO DOS DADOS
         modelos_ord = sorted(faturamento_por_modelo.items(), key=lambda x: x[1], reverse=True)
         acumulado = 0.0
         
@@ -278,7 +279,6 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
             pct_part = (fat / total_geral) * 100
             pct_acum = (acumulado / total_geral) * 100
             classe = "A" if pct_acum <= 80.0 else ("B" if pct_acum <= 95.0 else "C")
-            
             writer_abc.writerow([
                 modelo, int(quantidade_por_modelo.get(modelo, 0)),
                 f"R$ {fat:,.2f}".replace(",", "v").replace(".", ",").replace("v", "."),
@@ -288,7 +288,7 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
         status_log.empty()
         st.success("🎉 Processamento Concluído com Sucesso!")
         
-        # Criação dos botões de download na interface gráfica
+        # 2. RENDERIZAÇÃO DOS BOTÕES (Dentro do IF, aqui eles existem!)
         col1, col2 = st.columns(2)
         with col1:
             st.download_button(label="📥 Descarregar Tabela Curva ABC Pronta", data=output_abc.getvalue().encode('utf-8-sig'), file_name="relatorio_curva_abc_modelos.csv", mime="text/csv")

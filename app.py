@@ -241,8 +241,13 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
         
     save_state('cache_pedidos', {"ultima_sincronizacao": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "pedidos": pedidos_salvos})
     
-    # 3. Processamento de Relatórios (Agrupamento Corrigido)
+    ## 3. Processamento de Relatórios (Definição segura)
     status_log.info("⚙️ Calculando matriz matemática da Curva ABC...")
+    
+    # DEFINA OS OBJETOS AQUI, FORA DO IF
+    output_base = io.StringIO()
+    writer_base = csv.writer(output_base, delimiter=';')
+    writer_base.writerow(["Data", "ID Pedido", "SKU", "Modelo (Produto Pai)", "Variação Vendida", "Quantidade", "Preço Unitário", "Total Item", "Situação Pedido"])
     
     faturamento_por_modelo = {}
     quantidade_por_modelo = {}

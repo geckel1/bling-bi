@@ -216,12 +216,25 @@ if st.button("🚀 Executar Sincronização e Gerar Relatórios", disabled=not t
                 itens_proc = []
                 for item in itens:
                     sku = item.get('codigo', 'S/ SKU')
-                    var_nome = item.get('descricao') or item.get('nome') or 'Sem nome'
+                    
+                    # CORREÇÃO: Pegamos o nome do PAIS pelo SKU no cache.
+                    # Se não achar no cache (produto novo), aí sim usamos o nome original.
+                    modelo_pai = cache_skus.get(sku, item.get('descricao') or item.get('nome'))
+                    
                     try:
                         qtde, preco = float(item.get('quantidade', 0)), float(item.get('valor', 0))
                     except:
                         qtde, preco = 0.0, 0.0
-                    itens_proc.append({"sku": sku, "modelo_pai": cache_skus.get(sku, var_nome), "variacao": var_nome, "qtde": qtde, "preco": preco, "total": round(qtde*preco, 2)})
+                        
+                    # Aqui usamos 'modelo_pai' em vez do nome da variação
+                    itens_proc.append({
+                        "sku": sku, 
+                        "modelo_pai": modelo_pai, 
+                        "variacao": item.get('descricao', 'Sem nome'), 
+                        "qtde": qtde, 
+                        "preco": preco, 
+                        "total": round(qtde * preco, 2)
+                    })
                 pedidos_salvos[id_pedido] = {"data": data_pedido, "situacao": situacao, "itens": itens_proc}
             time.sleep(0.35)
         pagina += 1
